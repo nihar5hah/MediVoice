@@ -1,4 +1,6 @@
-const BASE = '/api';
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+  ? `${process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')}/api`
+  : '/api';
 
 export interface Appointment {
   id: string;

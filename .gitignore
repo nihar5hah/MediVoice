@@ -9,3 +9,4 @@ data/store.json
 *.log
 .DS_Store
 .playwright-mcp/
+.vercel
