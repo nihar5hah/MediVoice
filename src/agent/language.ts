@@ -1,0 +1,78 @@
+import type { LanguageCode } from '../shared/types.js';
+
+const hindiPattern = /[\u0900-\u097F]/;
+const tamilPattern = /[\u0B80-\u0BFF]/;
+
+export function detectLanguage(text: string, fallback: LanguageCode = 'en'): LanguageCode {
+  const lower = text.toLowerCase();
+  if (tamilPattern.test(text) || /tamil|vanakkam|நன்றி|மருத்துவர்/.test(lower)) return 'ta';
+  if (hindiPattern.test(text) || /hindi|namaste|dhanyavaad|doctor se|appointment chahiye/.test(lower)) return 'hi';
+  if (/[a-z]/i.test(text)) return 'en';
+  return fallback;
+}
+
+export function formatTime(iso: string, language: LanguageCode) {
+  return new Intl.DateTimeFormat(language === 'ta' ? 'ta-IN' : language === 'hi' ? 'hi-IN' : 'en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(new Date(iso));
+}
+
+export type SayKey =
+  | 'clarify' | 'noActive' | 'listed' | 'campaignIntro'
+  | 'confirmBook' | 'confirmCancel' | 'confirmReschedule'
+  | 'actionCancelled' | 'noSlot'
+  | 'askDoctor' | 'askName' | 'noDoctor';
+
+export function say(language: LanguageCode, key: SayKey, args?: { doctor?: string; time?: string }) {
+  const d = args?.doctor ?? '';
+  const t = args?.time ?? '';
+  const copy: Record<LanguageCode, Record<SayKey, string>> = {
+    en: {
+      clarify: 'I can help book, reschedule, or cancel an appointment. What would you like to do?',
+      noActive: 'I could not find an active appointment for you.',
+      listed: 'Here are your active appointments.',
+      campaignIntro: 'This is your care assistant calling with a reminder. Would you like to keep, reschedule, or cancel the appointment?',
+      confirmBook: `Shall I book an appointment with ${d} at ${t}? Say yes to confirm or no to choose a different time.`,
+      confirmCancel: `Shall I cancel your appointment with ${d} on ${t}? Say yes to confirm or no to keep it.`,
+      confirmReschedule: `Shall I reschedule your appointment to ${d} at ${t}? Say yes to confirm or no to choose differently.`,
+      actionCancelled: 'No problem, I have not made any changes. How else can I help you?',
+      noSlot: 'I could not find an available slot. Please suggest another time or doctor.',
+      askDoctor: 'Which doctor would you like to see?',
+      askName: 'May I have your full name please?',
+      noDoctor: 'I did not catch which doctor you would like. Could you say the doctor\'s name?'
+    },
+    hi: {
+      clarify: 'Main appointment book, reschedule, ya cancel kar sakta hoon. Aap kaunsa doctor ya time chahenge?',
+      noActive: 'Mujhe aapki koi active appointment nahi mili.',
+      listed: 'Yeh aapki active appointments hain.',
+      campaignIntro: 'Yeh aapka care assistant reminder ke liye call kar raha hai. Kya aap appointment rakhna, reschedule, ya cancel karna chahenge?',
+      confirmBook: `Kya main ${d} ke saath ${t} par appointment book karoon? Haan boliye confirm karne ke liye ya nahi boliye alag time ke liye.`,
+      confirmCancel: `Kya main aapki ${d} ke saath ${t} wali appointment cancel karoon? Haan boliye confirm karne ke liye ya nahi boliye rakhne ke liye.`,
+      confirmReschedule: `Kya main appointment ${d} ke saath ${t} par reschedule karoon? Haan boliye confirm karne ke liye ya nahi boliye alag time ke liye.`,
+      actionCancelled: 'Theek hai, maine koi changes nahi kiye. Aur kuch help chahiye?',
+      noSlot: 'Koi available slot nahi mila. Kripya alag time ya doctor batayein.',
+      askDoctor: 'Aap kaunse doctor se milna chahenge?',
+      askName: 'Kripya apna poora naam batayein?',
+      noDoctor: 'Doctor ka naam samajh nahi aaya. Kripya doctor ka naam dobara batayein.'
+    },
+    ta: {
+      clarify: 'Naan appointment book, reschedule, allathu cancel panna mudiyum. Endha doctor allathu time venum?',
+      noActive: 'Ungalukku active appointment kandupidikka mudiyavillai.',
+      listed: 'Ungal active appointments inge.',
+      campaignIntro: 'Idhu ungal care assistant reminder call. Appointment-ai keep, reschedule, allathu cancel panna virumbugireergala?',
+      confirmBook: `${d} kooda ${t} appointment book pannattuma? Aama sollunga confirm panna, illai sollunga vera time theriya.`,
+      confirmCancel: `${d} kooda ${t} appointment cancel pannattuma? Aama sollunga confirm panna, illai sollunga vaikkave.`,
+      confirmReschedule: `Appointment-ai ${d} kooda ${t} ku reschedule pannattuma? Aama sollunga confirm panna, illai sollunga vera time theriya.`,
+      actionCancelled: 'Paravailla, naan enna maathramum seyyalai. Vera enna udhavi seyyattuma?',
+      noSlot: 'Available slot kandupidikka mudiyavillai. Vera time allathu doctor sollunga.',
+      askDoctor: 'Endha mruththuvarை paarkka virumbukireenga?',
+      askName: 'Ungal full name sollunga?',
+      noDoctor: 'Doctor peyar puriyavillai. Mruththuvar peyar solla mudiuma?'
+    }
+  };
+  return copy[language][key];
+}

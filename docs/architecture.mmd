@@ -1,0 +1,16 @@
+flowchart LR
+  Browser[Browser voice UI\nSpeechRecognition + SpeechSynthesis] --> API[Express API\n/api/voice-turn]
+  API --> Agent[VoiceAgent orchestrator\nintent, policy, trace]
+  Agent --> Lang[Language detector\nEnglish, Hindi, Tamil]
+  Agent --> Parser[Intent + slot parser]
+  Agent --> Memory[Memory repository\nJSON now, Supabase later]
+  Agent --> Tools[Appointment tools]
+  Tools --> Availability[Availability and conflict checks]
+  Tools --> Appointments[(Appointments)]
+  Agent --> Campaign[Campaign logger]
+  Campaign --> Memory
+  Agent --> API
+  API --> Browser
+  VapiCampaigns[Vapi outbound campaigns] -. next .-> API
+  Vapi[Vapi phone number + webhooks] -. next .-> API
+  Supabase[(Supabase)] -. next .-> Memory
