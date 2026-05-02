@@ -36,28 +36,43 @@ const scheduler = new CampaignScheduler(vapiClient, vapiPhoneNumberId, vapiAssis
 scheduler.start();
 
 const app = express();
+app.set('trust proxy', true);
 const port = Number(process.env.PORT ?? 8787);
 
 app.use(express.json());
 
-app.get('/api/health', (_request, response) => {
+function resolveRequestPublicServerUrl(request: express.Request) {
+  const configured = getConfiguredPublicServerUrl();
+  if (configured) {
+    return configured;
+  }
+
+  const forwardedProto = request.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const forwardedHost = request.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const host = forwardedHost || request.get('host') || '';
+  const protocol = forwardedProto || request.protocol || 'https';
+  return host ? `${protocol}://${host}` : '';
+}
+
+app.get('/api/health', (request, response) => {
   const services: Record<string, boolean> = {
     agent: true,
     supabase: !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     vapi: !!vapiClient,
     vapiPhoneNumber: !!vapiPhoneNumberId,
     vapiAssistant: !!vapiAssistantId,
-    publicServerUrl: !!configuredPublicServerUrl
+    publicServerUrl: !!resolveRequestPublicServerUrl(request)
   };
   response.json({ ok: true, service: 'clinical-voice-agent', services });
 });
 
-app.get('/api/vapi/config', (_request, response) => {
+app.get('/api/vapi/config', (request, response) => {
+  const publicServerUrl = resolveRequestPublicServerUrl(request);
   response.json({
     ok: true,
-    publicServerUrl: configuredPublicServerUrl || null,
-    webhookUrl: configuredPublicServerUrl ? getWebhookUrl(configuredPublicServerUrl) : null,
-    processTurnToolUrl: configuredPublicServerUrl ? getProcessTurnToolUrl(configuredPublicServerUrl) : null,
+    publicServerUrl: publicServerUrl || null,
+    webhookUrl: publicServerUrl ? getWebhookUrl(publicServerUrl) : null,
+    processTurnToolUrl: publicServerUrl ? getProcessTurnToolUrl(publicServerUrl) : null,
     assistantId: vapiAssistantId || null,
     phoneNumberId: vapiPhoneNumberId || null
   });
