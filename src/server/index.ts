@@ -38,6 +38,8 @@ scheduler.start();
 const app = express();
 app.set('trust proxy', true);
 const port = Number(process.env.PORT ?? 8787);
+const serveClient = process.env.SERVE_CLIENT === 'true'
+  || (process.env.SERVE_CLIENT !== 'false' && process.env.NODE_ENV !== 'production');
 
 app.use(express.json());
 
@@ -52,6 +54,16 @@ function resolveRequestPublicServerUrl(request: express.Request) {
   const host = forwardedHost || request.get('host') || '';
   const protocol = forwardedProto || request.protocol || 'https';
   return host ? `${protocol}://${host}` : '';
+}
+
+function serializePatient(memory: Awaited<ReturnType<AgentStore['listPatients']>>[number]) {
+  return {
+    patient_id: memory.patientId,
+    language_preference: memory.languagePreference,
+    preferences: memory.preferences,
+    history: memory.history,
+    updated_at: memory.updatedAt
+  };
 }
 
 app.get('/api/health', (request, response) => {
@@ -227,7 +239,7 @@ app.get('/api/appointments/:patientId', async (request, response, next) => {
 app.get('/api/patients', async (_request, response, next) => {
   try {
     const patients = await store.listPatients();
-    response.json({ patients });
+    response.json({ patients: patients.map(serializePatient) });
   } catch (error) { next(error); }
 });
 
@@ -263,7 +275,7 @@ app.patch('/api/patients/:patientId', async (request, response, next) => {
       ...(preferences && { preferences })
     });
     if (!updated) { response.status(404).json({ error: 'Patient not found.' }); return; }
-    response.json({ ok: true, patient: updated });
+    response.json({ ok: true, patient: serializePatient(updated) });
   } catch (error) { next(error); }
 });
 
@@ -370,8 +382,18 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
 });
 
 const clientDist = join(dirname(fileURLToPath(import.meta.url)), '..', 'client');
-app.use(express.static(clientDist));
-app.use((_request, response) => response.sendFile(join(clientDist, 'index.html')));
+if (serveClient) {
+  app.use(express.static(clientDist));
+  app.use((_request, response) => response.sendFile(join(clientDist, 'index.html')));
+} else {
+  app.get('/', (_request, response) => {
+    response.json({
+      ok: true,
+      service: 'clinical-voice-agent',
+      mode: 'api-only'
+    });
+  });
+}
 
 app.listen(port, () => {
   console.log(`Clinical voice agent API listening on http://localhost:${port}`);

@@ -60,6 +60,17 @@ export interface Analytics {
   avgTurns: number;
 }
 
+interface PatientApiShape {
+  patient_id?: string;
+  language_preference?: 'en' | 'hi' | 'ta';
+  updated_at?: string;
+  patientId?: string;
+  languagePreference?: 'en' | 'hi' | 'ta';
+  updatedAt?: string;
+  preferences?: Record<string, unknown>;
+  history?: string[];
+}
+
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -69,12 +80,22 @@ async function req<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+function normalizePatient(patient: PatientApiShape): Patient {
+  return {
+    patient_id: patient.patient_id ?? patient.patientId ?? '',
+    language_preference: patient.language_preference ?? patient.languagePreference ?? 'en',
+    preferences: patient.preferences ?? {},
+    history: patient.history ?? [],
+    updated_at: patient.updated_at ?? patient.updatedAt ?? new Date(0).toISOString(),
+  };
+}
+
 export const api = {
   getAppointments: () => req<{ appointments: Appointment[] }>('/appointments').then(d => d.appointments),
   updateAppointment: (id: string, body: Partial<Appointment>) => req<{ ok: boolean }>(`/appointments/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteAppointment: (id: string) => req<{ ok: boolean }>(`/appointments/${id}`, { method: 'DELETE' }),
 
-  getPatients: () => req<{ patients: Patient[] }>('/patients').then(d => d.patients),
+  getPatients: () => req<{ patients: PatientApiShape[] }>('/patients').then(d => d.patients.map(normalizePatient)),
   updatePatient: (patientId: string, body: Partial<Patient>) => req<{ ok: boolean }>(`/patients/${patientId}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deletePatient: (patientId: string) => req<{ ok: boolean }>(`/patients/${patientId}`, { method: 'DELETE' }),
 
