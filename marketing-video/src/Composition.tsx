@@ -11,132 +11,227 @@ import {
   useVideoConfig,
 } from "remotion";
 
-const DURATION = 15 * 30;
-const SLIDE = 150;
-const OVERLAP = 12;
-const BG = "linear-gradient(135deg, #050816 0%, #0b1630 45%, #07111f 100%)";
-const BORDER = "1px solid rgba(255,255,255,0.12)";
-const SHADOW = "0 28px 90px rgba(0,0,0,0.42)";
-const EASE = Easing.bezier(0.16, 1, 0.3, 1);
+const FPS = 30;
+export const VIDEO_DURATION = 36 * FPS;
 
-function lerp(frame: number, input: [number, number], output: [number, number]) {
+const palette = {
+  ink: "#07111f",
+  midnight: "#0b1324",
+  panel: "rgba(255,255,255,0.075)",
+  border: "rgba(255,255,255,0.14)",
+  text: "#f7fbff",
+  muted: "rgba(226,232,240,0.76)",
+  blue: "#64d8ff",
+  mint: "#48e0a4",
+  gold: "#f5b942",
+  coral: "#ff7a7a",
+  violet: "#a88bff",
+};
+
+const ease = Easing.bezier(0.16, 1, 0.3, 1);
+const shadow = "0 28px 84px rgba(0, 0, 0, 0.38)";
+
+function anim(frame: number, input: [number, number], output: [number, number]) {
   return interpolate(frame, input, output, {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: EASE,
+    easing: ease,
   });
 }
 
-function segmentOpacity(frame: number, start = 0, duration = SLIDE) {
-  return interpolate(frame, [start, start + 12, start + duration - 12, start + duration], [0, 1, 1, 0], {
+function sceneOpacity(frame: number, duration: number, fade = 16) {
+  return interpolate(frame, [0, fade, duration - fade, duration], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: EASE,
+    easing: ease,
   });
 }
 
-function Chip({ children, accent = "#60a5fa" }: { children: React.ReactNode; accent?: string }) {
+function Background() {
+  const frame = useCurrentFrame();
+  const drift = anim(frame, [0, VIDEO_DURATION], [0, 220]);
+
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        width: "fit-content",
-        borderRadius: 999,
-        padding: "10px 14px",
-        border: "1px solid rgba(255,255,255,0.14)",
-        background: `${accent}18`,
-        color: "#f8fafc",
-        fontSize: 16,
-        fontWeight: 600,
-      }}
-    >
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: accent }} />
-      {children}
-    </span>
+    <AbsoluteFill style={{ background: `linear-gradient(140deg, ${palette.ink} 0%, #0d2037 48%, #07141f 100%)` }}>
+      <AbsoluteFill
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          backgroundPosition: `${drift}px ${drift * 0.65}px`,
+          opacity: 0.22,
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background:
+            "radial-gradient(circle at 18% 16%, rgba(100,216,255,0.20), transparent 24%), radial-gradient(circle at 74% 20%, rgba(72,224,164,0.14), transparent 22%), radial-gradient(circle at 86% 84%, rgba(245,185,66,0.12), transparent 26%)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(90deg, rgba(7,17,31,0.20), rgba(7,17,31,0.0) 42%, rgba(7,17,31,0.24))",
+        }}
+      />
+    </AbsoluteFill>
   );
 }
 
-function Bullet({
-  title,
-  text,
-  accent,
-}: {
-  title: string;
-  text: string;
-  accent: string;
-}) {
+function BrandBar() {
   return (
-    <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+    <>
       <div
         style={{
-          width: 14,
-          height: 14,
-          borderRadius: 999,
-          marginTop: 7,
-          background: accent,
-          boxShadow: `0 0 0 6px ${accent}22`,
-          flex: "0 0 auto",
+          position: "absolute",
+          left: 56,
+          top: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          color: palette.text,
+          fontSize: 17,
+          fontWeight: 800,
+          letterSpacing: 0.3,
         }}
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>{title}</div>
-        <div style={{ fontSize: 18, lineHeight: 1.5, color: "rgba(226,232,240,0.84)" }}>{text}</div>
+      >
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            background: `linear-gradient(135deg, ${palette.blue}, ${palette.mint})`,
+            boxShadow: "0 10px 26px rgba(100,216,255,0.26)",
+          }}
+        />
+        MediVoice
       </div>
+      <div
+        style={{
+          position: "absolute",
+          right: 56,
+          top: 32,
+          padding: "8px 13px",
+          border: `1px solid ${palette.border}`,
+          borderRadius: 999,
+          color: "rgba(247,251,255,0.70)",
+          background: "rgba(255,255,255,0.055)",
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        Clinical voice AI
+      </div>
+    </>
+  );
+}
+
+function Kicker({ children, color = palette.blue }: { children: React.ReactNode; color?: string }) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        width: "fit-content",
+        alignItems: "center",
+        gap: 10,
+        border: `1px solid ${palette.border}`,
+        borderRadius: 999,
+        padding: "8px 13px",
+        color: "rgba(247,251,255,0.76)",
+        background: "rgba(255,255,255,0.06)",
+        fontSize: 14,
+        fontWeight: 800,
+        letterSpacing: 1.7,
+        textTransform: "uppercase",
+      }}
+    >
+      <span style={{ width: 8, height: 8, borderRadius: 999, background: color, boxShadow: `0 0 0 6px ${color}22` }} />
+      {children}
     </div>
   );
 }
 
-function ScreenshotCard({
+function Pill({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "10px 14px",
+        borderRadius: 999,
+        border: `1px solid ${palette.border}`,
+        background: `${color}18`,
+        color: palette.text,
+        fontSize: 15,
+        fontWeight: 750,
+      }}
+    >
+      <span style={{ width: 7, height: 7, borderRadius: 999, background: color }} />
+      {children}
+    </div>
+  );
+}
+
+function Metric({ value, label, color }: { value: string; label: string; color: string }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${palette.border}`,
+        borderRadius: 16,
+        background: "rgba(255,255,255,0.07)",
+        padding: "13px 15px",
+        minWidth: 140,
+      }}
+    >
+      <div style={{ color, fontSize: 28, fontWeight: 900, lineHeight: 1 }}>{value}</div>
+      <div style={{ marginTop: 6, color: palette.muted, fontSize: 12, lineHeight: 1.26 }}>{label}</div>
+    </div>
+  );
+}
+
+function ScreenshotFrame({
   src,
   label,
-  tall = false,
+  scale = 1,
+  rotate = 0,
 }: {
   src: string;
   label: string;
-  tall?: boolean;
+  scale?: number;
+  rotate?: number;
 }) {
   return (
     <div
       style={{
         position: "relative",
-        borderRadius: 28,
         overflow: "hidden",
-        border: BORDER,
-        background: "rgba(7, 16, 32, 0.65)",
-        boxShadow: SHADOW,
+        borderRadius: 26,
+        border: `1px solid ${palette.border}`,
+        background: "rgba(7,17,31,0.78)",
+        boxShadow: shadow,
+        transform: `scale(${scale}) rotate(${rotate}deg)`,
       }}
     >
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.0) 24%, rgba(0,0,0,0.18) 100%)",
-          pointerEvents: "none",
-          zIndex: 2,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
+          zIndex: 3,
           left: 16,
           top: 16,
-          zIndex: 3,
-          display: "inline-flex",
-          gap: 8,
-          alignItems: "center",
           borderRadius: 999,
           padding: "8px 12px",
-          background: "rgba(5, 8, 22, 0.72)",
-          color: "#eff6ff",
+          color: palette.text,
+          background: "rgba(7,17,31,0.76)",
+          border: "1px solid rgba(255,255,255,0.12)",
           fontSize: 13,
-          fontWeight: 700,
+          fontWeight: 800,
           letterSpacing: 0.4,
         }}
       >
-        <span style={{ width: 8, height: 8, borderRadius: 999, background: "#60a5fa" }} />
         {label}
       </div>
       <Img
@@ -144,514 +239,396 @@ function ScreenshotCard({
         style={{
           display: "block",
           width: "100%",
-          height: tall ? 430 : 380,
+          height: "100%",
           objectFit: "cover",
           objectPosition: "top center",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(255,255,255,0.10), transparent 24%, rgba(0,0,0,0.18))",
+          zIndex: 2,
         }}
       />
     </div>
   );
 }
 
-function SlideShell({
-  eyebrow,
-  title,
-  subtitle,
-  left,
-  right,
-  frame,
-  start,
-  accent = "#60a5fa",
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  left: React.ReactNode;
-  right: React.ReactNode;
-  frame: number;
-  start: number;
-  accent?: string;
-}) {
-  const local = Math.max(0, frame - start);
-  const opacity = segmentOpacity(frame, start);
-  const y = lerp(local, [0, 30], [28, 0]);
-  const scale = lerp(local, [0, 26], [0.965, 1]);
+function PhoneCallCard({ frame }: { frame: number }) {
+  const bars = [28, 46, 34, 58, 40, 72, 50, 62, 36, 54, 30, 44];
 
   return (
-    <AbsoluteFill
+    <div
       style={{
-        opacity,
-        transform: `translateY(${y}px) scale(${scale})`,
-        display: "flex",
-        padding: "54px 60px",
-        color: "#eff6ff",
+        width: 430,
+        borderRadius: 30,
+        border: `1px solid ${palette.border}`,
+        background: "rgba(255,255,255,0.08)",
+        boxShadow: shadow,
+        padding: 22,
+        color: palette.text,
+        backdropFilter: "blur(18px)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 28,
-          flex: 1,
-        }}
-      >
-        <div style={{ width: "50%", display: "flex", flexDirection: "column", gap: 22 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              width: "fit-content",
-              alignItems: "center",
-              gap: 10,
-              borderRadius: 999,
-              border: BORDER,
-              background: "rgba(255,255,255,0.06)",
-              padding: "8px 14px",
-              fontSize: 15,
-              letterSpacing: 1.8,
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.74)",
-            }}
-          >
-            <span
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 999,
-                background: accent,
-                boxShadow: `0 0 0 6px ${accent}22`,
-              }}
-            />
-            {eyebrow}
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 76,
-                lineHeight: 0.94,
-                letterSpacing: -2,
-                fontWeight: 800,
-              }}
-            >
-              {title}
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                maxWidth: 560,
-                fontSize: 26,
-                lineHeight: 1.35,
-                color: "rgba(226,232,240,0.88)",
-              }}
-            >
-              {subtitle}
-            </p>
-          </div>
-
-          {left}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 14, color: palette.muted, fontWeight: 700 }}>Incoming call</div>
+          <div style={{ marginTop: 6, fontSize: 28, fontWeight: 900 }}>Patient scheduling</div>
         </div>
-
         <div
           style={{
-            width: "47%",
-            minWidth: 520,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {right}
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-}
-
-function IntroScene({ frame }: { frame: number }) {
-  const { fps } = useVideoConfig();
-  const progress = spring({ frame, fps, config: { damping: 18, stiffness: 120 } });
-  const floating = lerp(frame, [0, 80], [18, 0]);
-
-  return (
-    <SlideShell
-      eyebrow="Voice AI for clinics"
-      title="MediVoice"
-      subtitle="A multilingual appointment assistant that books, reschedules, cancels, and runs outbound reminders without making the caller repeat themselves."
-      frame={frame}
-      start={0}
-      accent="#7dd3fc"
-      left={
-        <div style={{ display: "flex", flexDirection: "column", gap: 22, marginTop: 6 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-            <Chip accent="#7dd3fc">Real-time browser console</Chip>
-            <Chip accent="#34d399">Vapi + webhook driven</Chip>
-            <Chip accent="#c084fc">English, Hindi, Tamil</Chip>
-          </div>
-
-          <div style={{ display: "grid", gap: 16 }}>
-            <Bullet
-              title="Two-step confirmation"
-              text="The agent confirms the exact appointment before it writes anything, which keeps accidental bookings and cancellations out of the flow."
-              accent="#60a5fa"
-            />
-            <Bullet
-              title="Live trace and latency"
-              text="Every turn captures intent parsing, tool calls, and response latency so the scheduling path is easy to debug and demo."
-              accent="#34d399"
-            />
-            <Bullet
-              title="Outbound follow-ups"
-              text="Campaigns run through the same scheduling system, so reminders and follow-up calls stay tied to the same patient record."
-              accent="#f59e0b"
-            />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 14,
-              marginTop: 8,
-              opacity: 0.95,
-              transform: `translateY(${floating}px)`,
-            }}
-          >
-            <div
-              style={{
-                padding: "16px 18px",
-                borderRadius: 22,
-                border: BORDER,
-                background: "rgba(255,255,255,0.06)",
-                minWidth: 176,
-              }}
-            >
-              <div style={{ fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(226,232,240,0.62)" }}>
-                Built with
-              </div>
-              <div style={{ fontSize: 21, fontWeight: 700, marginTop: 8 }}>React, Express, Vapi</div>
-            </div>
-            <div
-              style={{
-                padding: "16px 18px",
-                borderRadius: 22,
-                border: BORDER,
-                background: "rgba(255,255,255,0.06)",
-                minWidth: 176,
-              }}
-            >
-              <div style={{ fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(226,232,240,0.62)" }}>
-                Focus
-              </div>
-              <div style={{ fontSize: 21, fontWeight: 700, marginTop: 8 }}>Scheduling, not chatter</div>
-            </div>
-          </div>
-        </div>
-      }
-      right={
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            transform: `translateY(${lerp(frame, [0, 40], [18, 0])}px) rotate(${lerp(frame, [0, 80], [1.2, 0])}deg)`,
-          }}
-        >
-          <ScreenshotCard src={staticFile("mediavoice-dashboard.png")} label="Dashboard view" />
-          <div
-            style={{
-              position: "absolute",
-              right: 18,
-              bottom: 18,
-              padding: "14px 16px",
-              borderRadius: 22,
-              border: BORDER,
-              background: "rgba(7, 16, 32, 0.78)",
-              backdropFilter: "blur(10px)",
-              boxShadow: SHADOW,
-              minWidth: 220,
-              opacity: progress,
-            }}
-          >
-            <div style={{ fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(226,232,240,0.66)" }}>
-              Typical output
-            </div>
-            <div style={{ marginTop: 10, fontSize: 18, lineHeight: 1.4, color: "#f8fafc" }}>
-              “Your appointment with Dr. Rao is booked for tomorrow at 10:00 AM.”
-            </div>
-          </div>
-        </div>
-      }
-    />
-  );
-}
-
-function OperationsScene({ frame }: { frame: number }) {
-  return (
-    <SlideShell
-      eyebrow="Appointment operations"
-      title="Control the workflow"
-      subtitle="Booking, rescheduling, and cancellation stay deterministic, while the UI exposes trace data and operational status for the team."
-      frame={frame}
-      start={SLIDE - OVERLAP}
-      accent="#34d399"
-      left={
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-            <Chip accent="#34d399">Availability checks</Chip>
-            <Chip accent="#7dd3fc">Conflict prevention</Chip>
-            <Chip accent="#f59e0b">Campaign queue</Chip>
-          </div>
-
-          <div style={{ display: "grid", gap: 16 }}>
-            <Bullet
-              title="Confirm before write"
-              text="The agent resolves intent, gathers missing details, and asks for a yes/no confirmation before it mutates appointments."
-              accent="#34d399"
-            />
-            <Bullet
-              title="Multiple appointments handled"
-              text="If a patient has more than one active booking, the app asks which appointment they mean instead of guessing."
-              accent="#7dd3fc"
-            />
-            <Bullet
-              title="Vapi stays in sync"
-              text="The assistant, phone number, webhook, and processTurn tool all point at the same live backend."
-              accent="#a78bfa"
-            />
-          </div>
-        </div>
-      }
-      right={
-        <div
-          style={{
+            width: 54,
+            height: 54,
+            borderRadius: 18,
             display: "grid",
-            gridTemplateColumns: "1.12fr 0.88fr",
-            gap: 18,
-            alignItems: "start",
-            width: "100%",
-            transform: `translateY(${lerp(frame, [0, 50], [20, 0])}px)`,
+            placeItems: "center",
+            background: `${palette.mint}22`,
+            color: palette.mint,
+            fontSize: 27,
+            fontWeight: 900,
           }}
         >
-          <ScreenshotCard src={staticFile("mediavoice-appointments.png")} label="Appointments" tall />
-          <ScreenshotCard src={staticFile("mediavoice-campaigns.png")} label="Campaigns" tall />
+          AI
         </div>
-      }
-    />
-  );
-}
-
-function ClosingScene({ frame }: { frame: number }) {
-  const pulse = spring({ frame, fps: 30, config: { damping: 14, stiffness: 120 } });
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: segmentOpacity(frame, SLIDE * 2 - OVERLAP),
-        background: BG,
-        padding: "58px 66px",
-        color: "#eff6ff",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div
-          style={{
-            display: "inline-flex",
-            width: "fit-content",
-            alignItems: "center",
-            gap: 10,
-            borderRadius: 999,
-            border: BORDER,
-            background: "rgba(255,255,255,0.06)",
-            padding: "8px 14px",
-            fontSize: 15,
-            letterSpacing: 1.8,
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.74)",
-          }}
-        >
-          <span style={{ width: 9, height: 9, borderRadius: 999, background: "#f59e0b" }} />
-          Built for recruiters to remember
-        </div>
-        <h2
-          style={{
-            margin: 0,
-            maxWidth: 940,
-            fontSize: 74,
-            lineHeight: 0.95,
-            letterSpacing: -2,
-            fontWeight: 800,
-          }}
-        >
-          A clinic workflow that feels live, useful, and ready for production.
-        </h2>
-        <p style={{ margin: 0, maxWidth: 720, fontSize: 25, lineHeight: 1.38, color: "rgba(226,232,240,0.84)" }}>
-          MediVoice turns a phone call into a structured appointment action and gives the operator a dashboard that shows what happened at every step.
-        </p>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 14,
-          alignItems: "stretch",
-        }}
-      >
+      <div style={{ marginTop: 24, display: "flex", alignItems: "end", gap: 9, height: 86 }}>
+        {bars.map((height, index) => {
+          const wave = Math.sin((frame + index * 8) / 9);
+          return (
+            <div
+              key={index}
+              style={{
+                width: 18,
+                height: height + wave * 14,
+                borderRadius: 999,
+                background: `linear-gradient(180deg, ${palette.blue}, ${palette.mint})`,
+                opacity: 0.76 + Math.max(0, wave) * 0.22,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 24, display: "grid", gap: 10 }}>
         {[
-          ["Multilingual", "English, Hindi, and Tamil turn handling."],
-          ["Deterministic", "No guesswork for scheduling or conflicts."],
-          ["Observable", "Trace, latency, and campaign history."],
-          ["Polished", "Dashboard, screenshots, and a marketing video."],
-        ].map(([title, text], index) => (
+          ["Patient", "Can I move tomorrow's appointment to 3 PM?"],
+          ["MediVoice", "I found it. Please confirm: Dr. Rao, tomorrow at 3:00 PM."],
+        ].map(([role, text], index) => (
           <div
-            key={title}
+            key={role}
             style={{
-              padding: "20px 18px",
-              borderRadius: 24,
-              border: BORDER,
-              background: "rgba(255,255,255,0.06)",
-              transform: `translateY(${lerp(frame, [0, 30 + index * 4], [14, 0])}px)`,
+              padding: "13px 15px",
+              borderRadius: 16,
+              background: index === 1 ? `${palette.mint}18` : "rgba(255,255,255,0.07)",
+              border: `1px solid ${index === 1 ? "rgba(72,224,164,0.32)" : palette.border}`,
             }}
           >
-            <div style={{ fontSize: 21, fontWeight: 700 }}>{title}</div>
-            <div style={{ marginTop: 8, fontSize: 17, lineHeight: 1.45, color: "rgba(226,232,240,0.82)" }}>{text}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: index === 1 ? palette.mint : palette.blue }}>{role}</div>
+            <div style={{ marginTop: 5, fontSize: 16, lineHeight: 1.35 }}>{text}</div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 18,
-          paddingTop: 4,
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {["React", "Express", "Vapi", "Supabase", "Remotion"].map((item, index) => (
-            <span
-              key={item}
+function FlowLine({ frame }: { frame: number }) {
+  const items = [
+    ["Voice", palette.blue],
+    ["Intent", palette.violet],
+    ["Confirm", palette.gold],
+    ["Write", palette.mint],
+  ];
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {items.map(([label, color], index) => {
+        const fill = anim(frame, [index * 14, index * 14 + 28], [0.22, 1]);
+        return (
+          <React.Fragment key={label}>
+            <div
               style={{
-                borderRadius: 999,
-                padding: "10px 14px",
-                border: BORDER,
-                background: "rgba(255,255,255,0.06)",
+                width: 88,
+                height: 88,
+                borderRadius: 22,
+                border: `1px solid ${palette.border}`,
+                background: `${color}${Math.round(fill * 30).toString(16).padStart(2, "0")}`,
+                display: "grid",
+                placeItems: "center",
+                color: palette.text,
                 fontSize: 16,
-                fontWeight: 600,
-                opacity: lerp(frame, [0, 40 + index * 4], [0.65, 1]),
+                fontWeight: 900,
               }}
             >
-              {item}
-            </span>
-          ))}
-        </div>
-        <div
-          style={{
-            width: 190,
-            height: 190,
-            borderRadius: 999,
-            border: BORDER,
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(125,211,252,0.38), rgba(96,165,250,0.1) 45%, rgba(5,8,22,0.85) 68%)",
-            display: "grid",
-            placeItems: "center",
-            boxShadow: `0 0 0 14px rgba(96,165,250,0.06), ${SHADOW}`,
-            transform: `scale(${0.92 + pulse * 0.08})`,
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 18, letterSpacing: 1.8, textTransform: "uppercase", color: "rgba(255,255,255,0.68)" }}>
-              MediVoice
+              {label}
             </div>
-            <div style={{ marginTop: 8, fontSize: 30, fontWeight: 800 }}>Clinical AI</div>
+            {index < items.length - 1 ? <div style={{ width: 28, height: 2, background: "rgba(255,255,255,0.25)" }} /> : null}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function SceneShell({
+  children,
+  localFrame,
+  duration,
+}: {
+  children: React.ReactNode;
+  localFrame: number;
+  duration: number;
+}) {
+  const y = anim(localFrame, [0, 26], [24, 0]);
+  return (
+    <AbsoluteFill
+      style={{
+        opacity: sceneOpacity(localFrame, duration),
+        transform: `translateY(${y}px)`,
+        padding: "78px 56px 48px",
+        color: palette.text,
+      }}
+    >
+      {children}
+    </AbsoluteFill>
+  );
+}
+
+function HeroScene({ localFrame, duration }: { localFrame: number; duration: number }) {
+  const { fps } = useVideoConfig();
+  const pop = spring({ frame: localFrame, fps, config: { damping: 18, stiffness: 110 } });
+  const slide = anim(localFrame, [12, 72], [42, 0]);
+
+  return (
+    <SceneShell localFrame={localFrame} duration={duration}>
+      <div style={{ display: "grid", gridTemplateColumns: "0.92fr 1.08fr", gap: 34, height: "100%", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <Kicker color={palette.mint}>Multilingual front-desk automation</Kicker>
+          <h1 style={{ margin: 0, fontSize: 86, lineHeight: 0.9, fontWeight: 950, letterSpacing: 0 }}>
+            Voice AI that turns calls into clinic actions.
+          </h1>
+          <p style={{ margin: 0, maxWidth: 575, fontSize: 25, lineHeight: 1.36, color: palette.muted }}>
+            MediVoice handles booking, rescheduling, cancellations, reminders, and follow-ups across English, Hindi, and Tamil.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+            <Pill color={palette.blue}>Vapi calls</Pill>
+            <Pill color={palette.mint}>Two-step confirmations</Pill>
+            <Pill color={palette.gold}>Live trace data</Pill>
+          </div>
+        </div>
+
+        <div style={{ position: "relative", height: 520, transform: `translateX(${slide}px)` }}>
+          <div style={{ position: "absolute", inset: "16px 0 0 18px" }}>
+            <ScreenshotFrame src={staticFile("mediavoice-dashboard.png")} label="Live dashboard" scale={0.98 + pop * 0.02} rotate={-1.2} />
+          </div>
+          <div style={{ position: "absolute", right: 8, bottom: 26, transform: `translateY(${anim(localFrame, [24, 58], [42, 0])}px)` }}>
+            <PhoneCallCard frame={localFrame} />
           </div>
         </div>
       </div>
-    </AbsoluteFill>
+    </SceneShell>
+  );
+}
+
+function ProblemScene({ localFrame, duration }: { localFrame: number; duration: number }) {
+  return (
+    <SceneShell localFrame={localFrame} duration={duration}>
+      <div style={{ height: "100%", display: "grid", gridTemplateColumns: "0.88fr 1.12fr", gap: 42, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <Kicker color={palette.coral}>The real clinic bottleneck</Kicker>
+          <h2 style={{ margin: 0, fontSize: 72, lineHeight: 0.94, fontWeight: 950, letterSpacing: 0 }}>
+            Every call needs accuracy, context, and proof.
+          </h2>
+          <p style={{ margin: 0, fontSize: 24, lineHeight: 1.36, color: palette.muted }}>
+            The assistant does more than chat. It detects intent, checks availability, asks for missing details, and confirms before changing the schedule.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gap: 16 }}>
+          {[
+            ["Patient asks in any supported language", "Language routing keeps English, Hindi, and Tamil calls in one workflow.", palette.blue],
+            ["Agent parses the appointment action", "Book, reschedule, cancel, lookup, reminder, and campaign flows share the same scheduling core.", palette.violet],
+            ["System confirms before writing", "Appointment mutations require a clear yes/no confirmation, reducing accidental changes.", palette.gold],
+          ].map(([title, text, color], index) => (
+            <div
+              key={title}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "64px 1fr",
+                gap: 16,
+                alignItems: "center",
+                padding: "18px 20px",
+                borderRadius: 22,
+                border: `1px solid ${palette.border}`,
+                background: "rgba(255,255,255,0.07)",
+                transform: `translateX(${anim(localFrame, [index * 10, index * 10 + 32], [44, 0])}px)`,
+              }}
+            >
+              <div
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 18,
+                  display: "grid",
+                  placeItems: "center",
+                  background: `${color}20`,
+                  color,
+                  fontSize: 25,
+                  fontWeight: 950,
+                }}
+              >
+                {index + 1}
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 900 }}>{title}</div>
+                <div style={{ marginTop: 6, fontSize: 18, lineHeight: 1.36, color: palette.muted }}>{text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SceneShell>
+  );
+}
+
+function WorkflowScene({ localFrame, duration }: { localFrame: number; duration: number }) {
+  return (
+    <SceneShell localFrame={localFrame} duration={duration}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.08fr 0.92fr", gap: 38, height: "100%", alignItems: "center" }}>
+        <div style={{ height: 490 }}>
+          <ScreenshotFrame src={staticFile("mediavoice-appointments.png")} label="Appointments with traceable state" />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Kicker color={palette.gold}>From conversation to action</Kicker>
+          <h2 style={{ margin: 0, fontSize: 62, lineHeight: 0.94, fontWeight: 950, letterSpacing: 0 }}>
+            Deterministic scheduling behind every voice turn.
+          </h2>
+          <FlowLine frame={localFrame} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <Metric value="2-step" label="confirmation before writes" color={palette.gold} />
+            <Metric value="3" label="supported languages" color={palette.blue} />
+            <Metric value="live" label="latency and reasoning trace" color={palette.mint} />
+            <Metric value="Vapi" label="inbound and outbound calls" color={palette.violet} />
+          </div>
+        </div>
+      </div>
+    </SceneShell>
+  );
+}
+
+function CampaignScene({ localFrame, duration }: { localFrame: number; duration: number }) {
+  const progress = anim(localFrame, [20, 92], [0, 1]);
+  return (
+    <SceneShell localFrame={localFrame} duration={duration}>
+      <div style={{ height: "100%", display: "grid", gridTemplateColumns: "0.88fr 1.12fr", gap: 40, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 17 }}>
+          <Kicker color={palette.mint}>Outbound reminders and follow-ups</Kicker>
+          <h2 style={{ margin: 0, fontSize: 64, lineHeight: 0.94, fontWeight: 950, letterSpacing: 0 }}>
+            Campaigns run through the same patient context.
+          </h2>
+          <p style={{ margin: 0, fontSize: 22, lineHeight: 1.34, color: palette.muted }}>
+            Reminder calls, follow-up outreach, and analytics stay connected to appointments, patients, and operational history.
+          </p>
+          <div
+            style={{
+              height: 14,
+              borderRadius: 999,
+              overflow: "hidden",
+              background: "rgba(255,255,255,0.10)",
+              border: `1px solid ${palette.border}`,
+            }}
+          >
+            <div
+              style={{
+                width: `${progress * 100}%`,
+                height: "100%",
+                background: `linear-gradient(90deg, ${palette.blue}, ${palette.mint}, ${palette.gold})`,
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Pill color={palette.blue}>Queued calls</Pill>
+            <Pill color={palette.mint}>Patient memory</Pill>
+            <Pill color={palette.gold}>Operational analytics</Pill>
+          </div>
+        </div>
+
+        <div style={{ position: "relative", height: 532 }}>
+          <div style={{ position: "absolute", inset: "0 96px 0 0" }}>
+            <ScreenshotFrame src={staticFile("mediavoice-campaigns.png")} label="Campaign operations" rotate={1.1} />
+          </div>
+          <div style={{ position: "absolute", right: 0, bottom: 18, width: 390, height: 246 }}>
+            <ScreenshotFrame src={staticFile("mediavoice-dashboard.png")} label="Analytics surface" scale={1} rotate={-1.4} />
+          </div>
+        </div>
+      </div>
+    </SceneShell>
+  );
+}
+
+function ClosingScene({ localFrame, duration }: { localFrame: number; duration: number }) {
+  const { fps } = useVideoConfig();
+  const pulse = spring({ frame: localFrame, fps, config: { damping: 16, stiffness: 95 } });
+  return (
+    <SceneShell localFrame={localFrame} duration={duration}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+        <div
+          style={{
+            width: 116,
+            height: 116,
+            borderRadius: 32,
+            background: `linear-gradient(135deg, ${palette.blue}, ${palette.mint})`,
+            boxShadow: `0 0 0 ${14 + pulse * 12}px rgba(100,216,255,0.08), ${shadow}`,
+            marginBottom: 28,
+          }}
+        />
+        <Kicker color={palette.mint}>MediVoice</Kicker>
+        <h2 style={{ margin: "18px 0 0", maxWidth: 1030, fontSize: 84, lineHeight: 0.92, fontWeight: 950, letterSpacing: 0 }}>
+          A front desk that answers, understands, confirms, and acts.
+        </h2>
+        <p style={{ margin: "22px 0 0", maxWidth: 780, fontSize: 25, lineHeight: 1.35, color: palette.muted }}>
+          Real-time voice automation for clinical scheduling, reminders, and explainable patient workflows.
+        </p>
+        <div style={{ display: "flex", gap: 12, marginTop: 34, flexWrap: "wrap", justifyContent: "center" }}>
+          {["React", "Express", "Vapi", "Supabase", "Remotion"].map((item, index) => (
+            <Pill key={item} color={[palette.blue, palette.mint, palette.gold, palette.violet, palette.coral][index]}>
+              {item}
+            </Pill>
+          ))}
+        </div>
+      </div>
+    </SceneShell>
   );
 }
 
 export const MediVoicePromo = () => {
   const frame = useCurrentFrame();
+  const scenes = [
+    { from: 0, duration: 240, component: HeroScene },
+    { from: 210, duration: 240, component: ProblemScene },
+    { from: 420, duration: 240, component: WorkflowScene },
+    { from: 630, duration: 240, component: CampaignScene },
+    { from: 840, duration: 240, component: ClosingScene },
+  ];
 
   return (
     <AbsoluteFill
       style={{
-        background: BG,
-        color: "#f8fafc",
+        color: palette.text,
         fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
         overflow: "hidden",
       }}
     >
-      <AbsoluteFill
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-          backgroundPosition: `${lerp(frame, [0, DURATION], [0, 160])}px ${lerp(frame, [0, DURATION], [0, 160])}px`,
-          opacity: 0.18,
-        }}
-      />
-      <AbsoluteFill
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, rgba(96,165,250,0.18), transparent 28%), radial-gradient(circle at 80% 0%, rgba(34,197,94,0.12), transparent 24%), radial-gradient(circle at 100% 100%, rgba(168,85,247,0.12), transparent 24%)",
-        }}
-      />
-
-      <Sequence from={0} durationInFrames={SLIDE + 24}>
-        <IntroScene frame={frame} />
-      </Sequence>
-      <Sequence from={SLIDE - OVERLAP} durationInFrames={SLIDE + 24}>
-        <OperationsScene frame={frame} />
-      </Sequence>
-      <Sequence from={SLIDE * 2 - OVERLAP} durationInFrames={SLIDE + 24}>
-        <ClosingScene frame={frame} />
-      </Sequence>
-
-      <AbsoluteFill
-        style={{
-          pointerEvents: "none",
-          opacity: 0.9,
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            left: 64,
-            top: 28,
-            fontSize: 15,
-            letterSpacing: 1.6,
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.56)",
-          }}
-        >
-          Product video
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            right: 64,
-            top: 28,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            borderRadius: 999,
-            padding: "8px 14px",
-            border: BORDER,
-            background: "rgba(255,255,255,0.06)",
-            color: "#f8fafc",
-            fontSize: 14,
-            fontWeight: 700,
-          }}
-        >
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: "#34d399" }} />
-          30 fps
-        </div>
-      </AbsoluteFill>
+      <Background />
+      {scenes.map(({ from, duration, component: Component }) => (
+        <Sequence key={from} from={from} durationInFrames={duration}>
+          <Component localFrame={frame - from} duration={duration} />
+        </Sequence>
+      ))}
+      <BrandBar />
     </AbsoluteFill>
   );
 };

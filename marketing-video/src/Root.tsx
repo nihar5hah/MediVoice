@@ -1,6 +1,6 @@
 import "./index.css";
 import { Composition } from "remotion";
-import { MediVoicePromo } from "./Composition";
+import { MediVoicePromo, VIDEO_DURATION } from "./Composition";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="MediVoicePromo"
         component={MediVoicePromo}
-        durationInFrames={450}
+        durationInFrames={VIDEO_DURATION}
         fps={30}
         width={1280}
         height={720}
