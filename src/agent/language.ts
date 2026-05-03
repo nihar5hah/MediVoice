@@ -1,12 +1,17 @@
 import type { LanguageCode } from '../shared/types.js';
 
-const hindiPattern = /[\u0900-\u097F]/;
-const tamilPattern = /[\u0B80-\u0BFF]/;
+const hindiScript  = /[\u0900-\u097F]/;
+const tamilScript  = /[\u0B80-\u0BFF]/;
+
+// Common Romanized Hindi (Hinglish) words that Deepgram transcribes in Latin script
+const hindiRoman = /\b(mujhe|chahiye|nahi|haan|subah|shaam|baje|milna|karna|karo|achha|shukriya|namaste|dhanyavaad|boliye|batao|seedha|theek\s*h|bilkul|zaroor|aaj\s+[a-z0-9]|kal\s+[a-z0-9]|doctor\s+se|mere\s|mera\s|aap\s+kya|appointment\s+(chahiye|lena|book|karna)|kya\s+(aap|tum)|main\s+[a-z]|yaar\b|bhai\b|abhi\b|phir\b|bahut\b)\b/i;
+// Common Romanized Tamil words
+const tamilRoman  = /\b(vanakkam|nandri|romba|eppothu|naale|innikku|mruththuvar|sollunga|mudiyuma|theriyum|aamaa|paathukalam|vendiyathu|naan\b|seri\b|illai\b)\b/i;
 
 export function detectLanguage(text: string, fallback: LanguageCode = 'en'): LanguageCode {
   const lower = text.toLowerCase();
-  if (tamilPattern.test(text) || /tamil|vanakkam|நன்றி|மருத்துவர்/.test(lower)) return 'ta';
-  if (hindiPattern.test(text) || /hindi|namaste|dhanyavaad|doctor se|appointment chahiye/.test(lower)) return 'hi';
+  if (tamilScript.test(text) || tamilRoman.test(lower) || /\btamil\b/.test(lower)) return 'ta';
+  if (hindiScript.test(text) || hindiRoman.test(lower) || /\bhindi\b/.test(lower)) return 'hi';
   if (/[a-z]/i.test(text)) return 'en';
   return fallback;
 }
