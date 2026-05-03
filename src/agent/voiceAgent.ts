@@ -18,7 +18,10 @@ export class VoiceAgent {
       this.ensurePatient(request.patientId),
       this.store.getSession(request.sessionId)
     ]);
-    const langFallback = existingSession?.language ?? patient.languagePreference;
+    // Within an existing session: keep the established language (turn 2+)
+    // New session: always start from 'en' so the utterance detection runs fresh;
+    // patient.languagePreference is from a previous call and must NOT override new detection
+    const langFallback = existingSession?.language ?? 'en';
     const language = detectLanguage(request.utterance, langFallback);
     const session = existingSession ?? { sessionId: request.sessionId, patientId: request.patientId, language, turns: 0, updatedAt: new Date().toISOString() };
     session.language = language;
