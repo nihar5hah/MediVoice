@@ -28,7 +28,7 @@ export default function PatientsPage() {
   const counts = useMemo(()=>({ all:patients.length, en:patients.filter(p=>p.language_preference==='en').length, hi:patients.filter(p=>p.language_preference==='hi').length, ta:patients.filter(p=>p.language_preference==='ta').length }), [patients]);
 
   const filtered = useMemo(()=>patients
-    .filter(p=>{ const q=search.toLowerCase(); return (!q||p.patient_id.toLowerCase().includes(q))&&(lf==='all'||p.language_preference===lf); })
+    .filter(p=>{ const q=search.toLowerCase(); const name=((p.preferences?.name as string)||'').toLowerCase(); return (!q||p.patient_id.toLowerCase().includes(q)||name.includes(q))&&(lf==='all'||p.language_preference===lf); })
     .sort((a,b)=>{ const v=(x:Patient)=>sk==='updated_at'?x.updated_at:sk==='language_preference'?x.language_preference:x.patient_id; return sd==='asc'?v(a).localeCompare(v(b)):v(b).localeCompare(v(a)); })
   ,[patients,search,lf,sk,sd]);
 
@@ -77,8 +77,11 @@ export default function PatientsPage() {
                       onMouseLeave={e=>{ if(sel?.patient_id!==p.patient_id) e.currentTarget.style.background=''; }}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{background:'linear-gradient(135deg,#4f46e5,#818cf8)'}}>{p.patient_id.slice(-2).toUpperCase()}</div>
-                          <span className="font-mono text-xs font-medium" style={{color:'var(--text-primary)'}}>{p.patient_id}</span>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shrink-0" style={{background:'linear-gradient(135deg,#4f46e5,#818cf8)'}}>{(p.preferences?.name as string)?.[0]?.toUpperCase()||p.patient_id.slice(-2).toUpperCase()}</div>
+                          <div>
+                            {(p.preferences?.name as string) && <p className="text-sm font-semibold" style={{color:'var(--text-primary)'}}>{p.preferences.name as string}</p>}
+                            <span className="font-mono text-xs" style={{color:(p.preferences?.name as string)?'var(--text-muted)':'var(--text-primary)'}}>{p.patient_id}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3"><span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1',LANG_COLOR[p.language_preference]||'')}><Globe className="h-3 w-3"/>{LANG[p.language_preference]||p.language_preference}</span></td>
@@ -107,8 +110,10 @@ export default function PatientsPage() {
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white" style={{background:'linear-gradient(135deg,#4f46e5,#818cf8)'}}>{sel.patient_id.slice(-2).toUpperCase()}</div>
-                <div><p className="font-mono text-sm font-semibold break-all" style={{color:'var(--text-primary)'}}>{sel.patient_id}</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shrink-0" style={{background:'linear-gradient(135deg,#4f46e5,#818cf8)'}}>{(sel.preferences?.name as string)?.[0]?.toUpperCase()||sel.patient_id.slice(-2).toUpperCase()}</div>
+                <div>
+                  {(sel.preferences?.name as string) && <p className="text-sm font-bold" style={{color:'var(--text-primary)'}}>{sel.preferences.name as string}</p>}
+                  <p className="font-mono text-xs break-all" style={{color:'var(--text-muted)'}}>{sel.patient_id}</p>
                   <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 mt-1',LANG_COLOR[sel.language_preference]||'')}><Globe className="h-3 w-3"/>{LANG[sel.language_preference]}</span>
                 </div>
               </div>
