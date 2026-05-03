@@ -30,7 +30,7 @@ export type SayKey =
   | 'clarify' | 'noActive' | 'listed' | 'campaignIntro'
   | 'confirmBook' | 'confirmCancel' | 'confirmReschedule'
   | 'actionCancelled' | 'noSlot'
-  | 'askDoctor' | 'askName' | 'noDoctor';
+  | 'askDoctor' | 'askName' | 'noDoctor' | 'cancelFailed';
 
 export function say(language: LanguageCode, key: SayKey, args?: { doctor?: string; time?: string }) {
   const d = args?.doctor ?? '';
@@ -48,7 +48,8 @@ export function say(language: LanguageCode, key: SayKey, args?: { doctor?: strin
       noSlot: 'I could not find an available slot. Please suggest another time or doctor.',
       askDoctor: 'Which doctor would you like to see?',
       askName: 'May I have your full name please?',
-      noDoctor: 'I did not catch which doctor you would like. Could you say the doctor\'s name?'
+      noDoctor: 'I did not catch which doctor you would like. Could you say the doctor\'s name?',
+      cancelFailed: 'I am sorry, I could not cancel the appointment. Please try again.'
     },
     hi: {
       clarify: 'Main appointment book, reschedule, ya cancel kar sakta hoon. Aap kaunsa doctor ya time chahenge?',
@@ -62,7 +63,8 @@ export function say(language: LanguageCode, key: SayKey, args?: { doctor?: strin
       noSlot: 'Koi available slot nahi mila. Kripya alag time ya doctor batayein.',
       askDoctor: 'Aap kaunse doctor se milna chahenge?',
       askName: 'Kripya apna poora naam batayein?',
-      noDoctor: 'Doctor ka naam samajh nahi aaya. Kripya doctor ka naam dobara batayein.'
+      noDoctor: 'Doctor ka naam samajh nahi aaya. Kripya doctor ka naam dobara batayein.',
+      cancelFailed: 'Khed hai, appointment cancel nahi hui. Kripya dobara try karein.'
     },
     ta: {
       clarify: 'Naan appointment book, reschedule, allathu cancel panna mudiyum. Endha doctor allathu time venum?',
@@ -76,7 +78,8 @@ export function say(language: LanguageCode, key: SayKey, args?: { doctor?: strin
       noSlot: 'Available slot kandupidikka mudiyavillai. Vera time allathu doctor sollunga.',
       askDoctor: 'Endha mruththuvarை paarkka virumbukireenga?',
       askName: 'Ungal full name sollunga?',
-      noDoctor: 'Doctor peyar puriyavillai. Mruththuvar peyar solla mudiuma?'
+      noDoctor: 'Doctor peyar puriyavillai. Mruththuvar peyar solla mudiuma?',
+      cancelFailed: 'Manikkinren, appointment cancel aagavillai. Meendum try pannunga.'
     }
   };
   return copy[language][key];

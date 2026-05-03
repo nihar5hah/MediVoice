@@ -62,10 +62,9 @@ export class VoiceAgent {
             ? appts.find(a => a.id === pending.appointmentId && a.status === 'booked')
             : appts.find(a => a.status === 'booked');
           if (target) {
-            target.status = 'cancelled';
-            await this.store.upsertAppointment(target);
-            mark('tool.cancelAppointment', `Cancelled appointment ${target.id}`);
-            reply = this.cancelReply(language);
+            const updated = await this.store.updateAppointment(target.id, { status: 'cancelled' });
+            mark('tool.cancelAppointment', updated ? `Cancelled appointment ${target.id}` : `Update failed for ${target.id}`);
+            reply = updated ? this.cancelReply(language) : say(language, 'cancelFailed');
           } else {
             reply = say(language, 'noActive');
           }
