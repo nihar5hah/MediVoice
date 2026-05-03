@@ -3,6 +3,7 @@ const BASE = '/api';
 export interface Appointment {
   id: string;
   patientId: string;
+  patientName?: string;
   doctorId: string;
   doctorName: string;
   specialty: string;

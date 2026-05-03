@@ -71,6 +71,7 @@ export class SupabaseStore implements AgentStore {
       language: session.language,
       current_intent: session.currentIntent ?? null,
       pending_confirmation: session.pendingConfirmation ?? null,
+      gathering_book: session.gatheringBook ?? null,
       turns: session.turns,
       updated_at: session.updatedAt
     });
@@ -148,6 +149,7 @@ export class SupabaseStore implements AgentStore {
       language: row.language as SessionState['language'],
       currentIntent: (row.current_intent as SessionState['currentIntent']) ?? undefined,
       pendingConfirmation: (row.pending_confirmation as SessionState['pendingConfirmation']) ?? undefined,
+      gatheringBook: (row.gathering_book as SessionState['gatheringBook']) ?? undefined,
       turns: row.turns as number,
       updatedAt: row.updated_at as string
     };
@@ -157,6 +159,7 @@ export class SupabaseStore implements AgentStore {
     return {
       id: row.id as string,
       patientId: row.patient_id as string,
+      patientName: (row.patient_name as string) || undefined,
       doctorId: row.doctor_id as string,
       doctorName: row.doctor_name as string,
       specialty: row.specialty as string,

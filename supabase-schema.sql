@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   language TEXT NOT NULL CHECK (language IN ('en', 'hi', 'ta')),
   current_intent TEXT CHECK (current_intent IN ('book', 'reschedule', 'cancel', 'list', 'campaign_response', 'clarify')),
   pending_confirmation JSONB DEFAULT NULL,
+  gathering_book JSONB DEFAULT NULL,
   turns INTEGER DEFAULT 0,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   doctor_id TEXT NOT NULL,
   doctor_name TEXT NOT NULL,
   specialty TEXT NOT NULL,
+  patient_name TEXT,
   start_iso TIMESTAMPTZ NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('booked', 'cancelled', 'completed'))
 );
@@ -39,6 +41,10 @@ CREATE TABLE IF NOT EXISTS campaign_logs (
   outcome TEXT NOT NULL,
   at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration: run these if upgrading an existing database
+-- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gathering_book JSONB DEFAULT NULL;
+-- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS patient_name TEXT;
 
 -- Enable RLS (optional but recommended for production)
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;

@@ -120,7 +120,7 @@ export class VoiceAgent {
         }
         gatheringHandled = true;
       } else if (g.step === 'name') {
-        const rawName = request.utterance.replace(/^(my name is|i am|i'm|naam hai|name is)\s*/i, '').trim();
+        const rawName = request.utterance.replace(/^(my (full )?name is|i am|i'm|naam hai|(full )?name is)\s*/i, '').trim();
         if (rawName.length > 0 && rawName.length < 80) {
           patient.preferences = { ...patient.preferences, name: rawName };
           mark('gather.name', `Got name: ${rawName}`);

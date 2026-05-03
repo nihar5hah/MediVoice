@@ -32,7 +32,7 @@ export default function AppointmentsPage() {
   const counts = useMemo(() => ({ all: appts.length, booked: appts.filter(a=>a.status==='booked').length, completed: appts.filter(a=>a.status==='completed').length, cancelled: appts.filter(a=>a.status==='cancelled').length }), [appts]);
 
   const filtered = useMemo(() => appts
-    .filter(a => { const q=search.toLowerCase(); return (!q||a.patientId.toLowerCase().includes(q)||a.doctorName.toLowerCase().includes(q)||a.specialty.toLowerCase().includes(q))&&(sf==='all'||a.status===sf); })
+    .filter(a => { const q=search.toLowerCase(); return (!q||a.patientId.toLowerCase().includes(q)||(a.patientName??'').toLowerCase().includes(q)||a.doctorName.toLowerCase().includes(q)||a.specialty.toLowerCase().includes(q))&&(sf==='all'||a.status===sf); })
     .sort((a,b) => { const v=(x:Appointment)=>sk==='patientId'?x.patientId:sk==='doctorName'?x.doctorName:sk==='specialty'?x.specialty:sk==='startIso'?x.startIso:x.status; return sd==='asc'?v(a).localeCompare(v(b)):v(b).localeCompare(v(a)); })
   , [appts,search,sf,sk,sd]);
 
@@ -80,7 +80,7 @@ export default function AppointmentsPage() {
                       style={{ borderColor:'var(--card-border)', background: sel?.id===a.id?'var(--accent-light)':undefined }}
                       onMouseEnter={e=>{ if(sel?.id!==a.id) e.currentTarget.style.background='#f8f9ff'; }}
                       onMouseLeave={e=>{ if(sel?.id!==a.id) e.currentTarget.style.background=''; }}>
-                      <td className="px-4 py-3"><span className="font-mono text-xs" style={{color:'var(--text-primary)'}}>{a.patientId}</span></td>
+                      <td className="px-4 py-3"><span className="text-sm" style={{color:'var(--text-primary)'}}>{a.patientName || <span className="font-mono text-xs" style={{color:'var(--text-muted)'}}>{a.patientId}</span>}</span></td>
                       <td className="px-4 py-3 font-medium text-sm" style={{color:'var(--text-primary)'}}>{a.doctorName}</td>
                       <td className="px-4 py-3 text-xs capitalize" style={{color:'var(--text-secondary)'}}>{a.specialty}</td>
                       <td className="px-4 py-3 text-xs font-mono" style={{color:'var(--text-secondary)'}}>{new Date(a.startIso).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</td>
@@ -111,7 +111,7 @@ export default function AppointmentsPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white" style={{background:'linear-gradient(135deg,#4f46e5,#818cf8)'}}>{sel.doctorName.split(' ').pop()?.[0]}</div>
                 <div><p className="text-sm font-semibold" style={{color:'var(--text-primary)'}}>{sel.doctorName}</p><p className="text-xs capitalize" style={{color:'var(--text-secondary)'}}>{sel.specialty}</p></div>
               </div>
-              {([{icon:User,label:'Patient ID',value:sel.patientId,mono:true},{icon:Calendar,label:'Date & Time',value:new Date(sel.startIso).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'}),mono:false},{icon:Stethoscope,label:'Appt ID',value:sel.id,mono:true}] as const).map(({icon:Icon,label,value,mono})=>(
+              {([...(sel.patientName?[{icon:User,label:'Patient Name',value:sel.patientName,mono:false}]:[]),(sel.patientName?{icon:User,label:'Patient ID',value:sel.patientId,mono:true}:{icon:User,label:'Patient ID',value:sel.patientId,mono:true}),{icon:Calendar,label:'Date & Time',value:new Date(sel.startIso).toLocaleString('en-IN',{dateStyle:'full',timeStyle:'short'}),mono:false},{icon:Stethoscope,label:'Appt ID',value:sel.id,mono:true}] as {icon:typeof User;label:string;value:string;mono:boolean}[]).map(({icon:Icon,label,value,mono})=>(
                 <div key={label} className="flex items-start gap-2.5">
                   <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{color:'var(--text-muted)'}}/>
                   <div><p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{color:'var(--text-muted)'}}>{label}</p><p className={cn('text-xs break-all',mono&&'font-mono')} style={{color:'var(--text-primary)'}}>{value}</p></div>
