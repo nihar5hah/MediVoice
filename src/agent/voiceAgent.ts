@@ -12,12 +12,18 @@ export class VoiceAgent {
     const trace: AgentTraceStep[] = [];
     const mark = (step: string, detail: string) => trace.push({ at: new Date().toISOString(), step, detail, elapsedMs: Math.round(performance.now() - started) });
 
-    const patient = await this.ensurePatient(request.patientId);
-    const language = detectLanguage(request.utterance, patient.languagePreference);
-    const session = await this.ensureSession(request.sessionId, request.patientId, language);
+    // Load patient + session in parallel; use session language as fallback so the
+    // language established on turn 1 carries through even for utterances like "yes" or "10 am"
+    const [patient, existingSession] = await Promise.all([
+      this.ensurePatient(request.patientId),
+      this.store.getSession(request.sessionId)
+    ]);
+    const langFallback = existingSession?.language ?? patient.languagePreference;
+    const language = detectLanguage(request.utterance, langFallback);
+    const session = existingSession ?? { sessionId: request.sessionId, patientId: request.patientId, language, turns: 0, updatedAt: new Date().toISOString() };
     session.language = language;
     session.turns += 1;
-    mark('memory.load', `Loaded patient preference=${patient.languagePreference}, session turns=${session.turns}`);
+    mark('memory.load', `Loaded patient preference=${patient.languagePreference}, session lang=${langFallback}, detected=${language}, turns=${session.turns}`);
 
     const parsed = parseTurn(request.utterance, language);
     session.currentIntent = request.mode === 'outbound' && parsed.intent === 'clarify' ? 'campaign_response' : parsed.intent;
@@ -281,10 +287,6 @@ export class VoiceAgent {
     const memory: PatientMemory = { patientId, languagePreference: 'en', preferences: {}, history: [], updatedAt: new Date().toISOString() };
     await this.store.upsertPatient(memory);
     return memory;
-  }
-
-  private async ensureSession(sessionId: string, patientId: string, language: PatientMemory['languagePreference']): Promise<SessionState> {
-    return (await this.store.getSession(sessionId)) ?? { sessionId, patientId, language, turns: 0, updatedAt: new Date().toISOString() };
   }
 
   private bookingReply(language: PatientMemory['languagePreference'], doctor: string, iso: string, name?: string) {
