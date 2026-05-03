@@ -12,8 +12,7 @@ export function detectLanguage(text: string, fallback: LanguageCode = 'en'): Lan
   const lower = text.toLowerCase();
   if (tamilScript.test(text) || tamilRoman.test(lower) || /\btamil\b/.test(lower)) return 'ta';
   if (hindiScript.test(text) || hindiRoman.test(lower) || /\bhindi\b/.test(lower)) return 'hi';
-  if (/[a-z]/i.test(text)) return 'en';
-  return fallback;
+  return fallback; // no explicit markers → stay in the established language
 }
 
 export function formatTime(iso: string, language: LanguageCode) {
