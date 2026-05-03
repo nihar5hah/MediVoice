@@ -1,16 +1,42 @@
-flowchart LR
-  Browser[Browser voice UI\nSpeechRecognition + SpeechSynthesis] --> API[Express API\n/api/voice-turn]
-  API --> Agent[VoiceAgent orchestrator\nintent, policy, trace]
-  Agent --> Lang[Language detector\nEnglish, Hindi, Tamil]
-  Agent --> Parser[Intent + slot parser]
-  Agent --> Memory[Memory repository\nJSON now, Supabase later]
-  Agent --> Tools[Appointment tools]
-  Tools --> Availability[Availability and conflict checks]
-  Tools --> Appointments[(Appointments)]
-  Agent --> Campaign[Campaign logger]
-  Campaign --> Memory
-  Agent --> API
-  API --> Browser
-  VapiCampaigns[Vapi outbound campaigns] -. next .-> API
-  Vapi[Vapi phone number + webhooks] -. next .-> API
-  Supabase[(Supabase)] -. next .-> Memory
+flowchart TD
+  subgraph Inbound["Inbound Call"]
+    Phone[Patient phone call] --> VapiPhone[Vapi phone number]
+    VapiPhone --> VapiLLM[Vapi · GPT-4o\nasst-request + tool-calls]
+  end
+
+  subgraph Outbound["Outbound Campaigns"]
+    Scheduler[CampaignScheduler\nbackground poller] -->|createCall| VapiPhone
+  end
+
+  subgraph Backend["Render · Express API"]
+    Webhook[/api/vapi/webhook\nassistant-request · tool-calls · end-of-call/]
+    VoiceTurn[/api/voice-turn\ndirect HTTP/]
+    Agent[VoiceAgent\norchestrator]
+    Parser[Intent + slot parser\nEN · HI · TA]
+    LangDetect[Language detector]
+    Tools[Scheduling tools\nbookAppointment · reschedule · cancel · checkAvailability]
+  end
+
+  subgraph Persistence["Supabase · Postgres"]
+    Patients[(patients\npreferences · history · language)]
+    Sessions[(sessions\nintent · gatheringBook · pendingConfirmation)]
+    Appts[(appointments\nstatus · patientName · startIso)]
+    CampaignLogs[(campaign_logs\noutcome · campaignType)]
+  end
+
+  subgraph Dashboard["Vercel · Next.js Dashboard"]
+    UI[Browser dashboard\nAppointments · Patients · Analytics · Campaigns]
+  end
+
+  VapiLLM -->|webhook POST| Webhook
+  Webhook --> Agent
+  VoiceTurn --> Agent
+  Agent --> Parser
+  Agent --> LangDetect
+  Agent --> Tools
+  Tools --> Appts
+  Agent -->|read/write| Patients
+  Agent -->|read/write| Sessions
+  Agent -->|logCampaign| CampaignLogs
+  UI -->|REST /api/*| Webhook
+  Webhook -.->|reply| VapiLLM

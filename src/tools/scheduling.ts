@@ -35,7 +35,7 @@ export async function nextSlots(candidate: SlotCandidate, store: AgentStore, lim
   const booked = new Set(
     appointments
       .filter((appointment) => appointment.doctorId === doctor.id && appointment.status === 'booked')
-      .map((appointment) => appointment.startIso)
+      .map((appointment) => new Date(appointment.startIso).toISOString())
   );
   const now = new Date();
   const slots: string[] = [];
@@ -89,7 +89,7 @@ export async function checkAvailability(candidate: SlotCandidate, store: AgentSt
   }
   const appointments = await store.listAppointments();
   const conflict = requested
-    ? appointments.some((appointment) => appointment.doctorId === doctor.id && appointment.startIso === requested.toISOString() && appointment.status === 'booked')
+    ? appointments.some((appointment) => appointment.doctorId === doctor.id && new Date(appointment.startIso).toISOString() === requested.toISOString() && appointment.status === 'booked')
     : false;
   if (conflict) return { ok: false, message: 'Requested slot is already booked.', data: await nextSlots(candidate, store) };
   return { ok: true, message: 'Slot is available.', data: { doctor, slots: requested ? [requested.toISOString()] : (await nextSlots(candidate, store)).slots } };

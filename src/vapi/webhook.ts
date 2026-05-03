@@ -230,6 +230,7 @@ export function createVapiWebhookHandler(store: AgentStore) {
             });
 
             console.log(`[Vapi Tool] processTurn reply: ${result.reply.slice(0, 120)}`);
+            console.log(`[Vapi Tool] processTurn latency: ${result.latencyMs}ms | turns: ${result.session?.turns} | intent: ${result.session?.currentIntent ?? 'clarify'}`);
             return { toolCallId: toolCall.id, result: result.reply };
           }
 
