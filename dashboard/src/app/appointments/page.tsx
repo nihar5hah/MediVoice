@@ -29,15 +29,14 @@ export default function AppointmentsPage() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.getAppointments(), api.getPatients()])
-      .then(([appointments, patients]) => {
-        setAppts(appointments);
+    api.getAppointments().then(setAppts).catch(console.error).finally(() => setLoading(false));
+    api.getPatients()
+      .then(patients => {
         const map: Record<string, string> = {};
         patients.forEach((p: Patient) => { if (p.preferences?.name) map[p.patient_id] = p.preferences.name as string; });
         setPatientMap(map);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
   };
   useEffect(load, []);
 
