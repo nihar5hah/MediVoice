@@ -1,20 +1,22 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { Appointment, PatientMemory, SessionState } from '../shared/types.js';
-import type { AgentStore, CampaignLogEntry } from './storeInterface.js';
+import type { AgentStore, CampaignLogEntry, TraceEntry } from './storeInterface.js';
 
 interface StoreShape {
   patients: Record<string, PatientMemory>;
   sessions: Record<string, SessionState>;
   appointments: Appointment[];
   campaignLog: Array<{ patientId: string; campaignType: string; outcome: string; at: string }>;
+  traces: TraceEntry[];
 }
 
 const defaultStore: StoreShape = {
   patients: {},
   sessions: {},
   appointments: [],
-  campaignLog: []
+  campaignLog: [],
+  traces: []
 };
 
 export class JsonStore implements AgentStore {
@@ -106,5 +108,14 @@ export class JsonStore implements AgentStore {
 
   async listCampaignLogs(): Promise<CampaignLogEntry[]> {
     return [...this.data.campaignLog];
+  }
+
+  async logTrace(entry: TraceEntry): Promise<void> {
+    this.data.traces = [{ ...entry, id: this.data.traces.length + 1 }, ...this.data.traces].slice(0, 500);
+    await this.save();
+  }
+
+  async listTraces(limit = 100): Promise<TraceEntry[]> {
+    return this.data.traces.slice(0, limit);
   }
 }

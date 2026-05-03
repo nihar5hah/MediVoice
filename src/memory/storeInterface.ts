@@ -1,4 +1,18 @@
-import type { Appointment, PatientMemory, SessionState } from '../shared/types.js';
+import type { AgentTraceStep, Appointment, PatientMemory, SessionState } from '../shared/types.js';
+
+export interface TraceEntry {
+  id?: number;
+  callId: string;
+  patientId: string;
+  turn: number;
+  utterance: string;
+  reply: string;
+  intent?: string;
+  language?: string;
+  latencyMs: number;
+  trace: AgentTraceStep[];
+  createdAt: string;
+}
 
 export interface CampaignLogEntry {
   patientId: string;
@@ -24,4 +38,7 @@ export interface AgentStore {
 
   logCampaign(patientId: string, campaignType: string, outcome: string): Promise<void>;
   listCampaignLogs(): Promise<CampaignLogEntry[]>;
+
+  logTrace(entry: TraceEntry): Promise<void>;
+  listTraces(limit?: number): Promise<TraceEntry[]>;
 }

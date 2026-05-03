@@ -38,6 +38,27 @@ export interface CampaignJob {
   createdAt: string;
 }
 
+export interface TraceStep {
+  at: string;
+  step: string;
+  detail: string;
+  elapsedMs: number;
+}
+
+export interface Trace {
+  id?: number;
+  callId: string;
+  patientId: string;
+  turn: number;
+  utterance: string;
+  reply: string;
+  intent?: string;
+  language?: string;
+  latencyMs: number;
+  trace: TraceStep[];
+  createdAt: string;
+}
+
 export interface Doctor {
   id: string;
   name: string;
@@ -106,4 +127,5 @@ export const api = {
   getCampaigns: () => req<{ campaigns: Campaign[] }>('/campaigns').then(d => d.campaigns),
   getAnalytics: () => req<Analytics>('/analytics'),
   getHealth: () => req<{ ok: boolean; services: Record<string, boolean> }>('/health'),
+  getTraces: (limit = 100) => req<{ traces: Trace[] }>(`/traces?limit=${limit}`).then(d => d.traces),
 };

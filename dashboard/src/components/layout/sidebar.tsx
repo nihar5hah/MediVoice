@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Calendar, Stethoscope, Users, BarChart3,
-  Megaphone, Settings, Activity, ChevronLeft, ChevronRight,
+  Megaphone, Settings, Activity, ChevronLeft, ChevronRight, Cpu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './sidebar-context';
@@ -16,6 +16,7 @@ const nav = [
   { label: 'Patients',     icon: Users,            href: '/patients' },
   { label: 'Analytics',    icon: BarChart3,        href: '/analytics' },
   { label: 'Campaigns',    icon: Megaphone,        href: '/campaigns' },
+  { label: 'Traces',       icon: Cpu,              href: '/traces' },
   { label: 'Settings',     icon: Settings,         href: '/settings' },
 ];
 

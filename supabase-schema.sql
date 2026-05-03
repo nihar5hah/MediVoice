@@ -42,9 +42,31 @@ CREATE TABLE IF NOT EXISTS campaign_logs (
   at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Call traces table (per-turn reasoning trace for every Vapi call)
+CREATE TABLE IF NOT EXISTS call_traces (
+  id          BIGSERIAL PRIMARY KEY,
+  call_id     TEXT        NOT NULL,
+  patient_id  TEXT        NOT NULL,
+  turn        INTEGER     NOT NULL,
+  utterance   TEXT        NOT NULL,
+  reply       TEXT        NOT NULL,
+  intent      TEXT,
+  language    TEXT,
+  latency_ms  INTEGER     NOT NULL,
+  trace       JSONB       NOT NULL DEFAULT '[]',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS call_traces_call_id_idx    ON call_traces(call_id);
+CREATE INDEX IF NOT EXISTS call_traces_patient_id_idx ON call_traces(patient_id);
+CREATE INDEX IF NOT EXISTS call_traces_created_at_idx ON call_traces(created_at DESC);
+
+ALTER TABLE call_traces ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON call_traces FOR ALL USING (true) WITH CHECK (true);
+
 -- Migration: run these if upgrading an existing database
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gathering_book JSONB DEFAULT NULL;
 -- ALTER TABLE appointments ADD COLUMN IF NOT EXISTS patient_name TEXT;
+-- (call_traces is a new table — run the CREATE TABLE above)
 
 -- Enable RLS (optional but recommended for production)
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;

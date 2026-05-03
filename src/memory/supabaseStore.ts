@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Appointment, PatientMemory, SessionState } from '../shared/types.js';
-import type { AgentStore, CampaignLogEntry } from './storeInterface.js';
+import type { AgentStore, CampaignLogEntry, TraceEntry } from './storeInterface.js';
 
 export class SupabaseStore implements AgentStore {
   private client: SupabaseClient;
@@ -130,6 +130,42 @@ export class SupabaseStore implements AgentStore {
       outcome,
       at: new Date().toISOString()
     });
+  }
+
+  async logTrace(entry: TraceEntry): Promise<void> {
+    await this.client.from('call_traces').insert({
+      call_id:    entry.callId,
+      patient_id: entry.patientId,
+      turn:       entry.turn,
+      utterance:  entry.utterance,
+      reply:      entry.reply,
+      intent:     entry.intent ?? null,
+      language:   entry.language ?? null,
+      latency_ms: entry.latencyMs,
+      trace:      entry.trace,
+      created_at: entry.createdAt
+    });
+  }
+
+  async listTraces(limit = 100): Promise<TraceEntry[]> {
+    const { data } = await this.client
+      .from('call_traces')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    return (data ?? []).map(row => ({
+      id:         row.id as number,
+      callId:     row.call_id as string,
+      patientId:  row.patient_id as string,
+      turn:       row.turn as number,
+      utterance:  row.utterance as string,
+      reply:      row.reply as string,
+      intent:     (row.intent as string) || undefined,
+      language:   (row.language as string) || undefined,
+      latencyMs:  row.latency_ms as number,
+      trace:      (row.trace as TraceEntry['trace']) ?? [],
+      createdAt:  row.created_at as string
+    }));
   }
 
   private rowToPatient(row: Record<string, unknown>): PatientMemory {

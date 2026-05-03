@@ -367,6 +367,15 @@ app.get('/api/doctors', async (_request, response, next) => {
   } catch (error) { next(error); }
 });
 
+// Get call traces (reasoning trace per turn)
+app.get('/api/traces', async (request, response, next) => {
+  try {
+    const limit = Math.min(Number(request.query.limit ?? 100), 500);
+    const traces = await store.listTraces(limit);
+    response.json({ traces });
+  } catch (error) { next(error); }
+});
+
 // Get all campaign logs
 app.get('/api/campaigns', async (_request, response, next) => {
   try {
