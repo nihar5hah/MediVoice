@@ -13,6 +13,7 @@ export function detectLanguage(text: string, fallback: LanguageCode = 'en'): Lan
 
 export function formatTime(iso: string, language: LanguageCode) {
   return new Intl.DateTimeFormat(language === 'ta' ? 'ta-IN' : language === 'hi' ? 'hi-IN' : 'en-IN', {
+    timeZone: 'Asia/Kolkata',
     weekday: 'short',
     day: 'numeric',
     month: 'short',

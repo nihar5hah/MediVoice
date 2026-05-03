@@ -8,7 +8,10 @@ export const doctors: Doctor[] = [
   { id: 'doc-iyer', name: 'Dr. Iyer', specialty: 'dermatology', languages: ['en', 'ta'] }
 ];
 
-const workingHours = [9, 10, 11, 14, 15, 16];
+const workingHours = [9, 10, 11, 14, 15, 16]; // hours in IST (Asia/Kolkata, UTC+5:30)
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const toIST  = (d: Date) => new Date(d.getTime() + IST_OFFSET_MS);
+const fromIST = (d: Date) => new Date(d.getTime() - IST_OFFSET_MS);
 
 export interface SlotCandidate {
   doctorId?: string;
@@ -38,13 +41,16 @@ export async function nextSlots(candidate: SlotCandidate, store: AgentStore, lim
       .map((appointment) => new Date(appointment.startIso).toISOString())
   );
   const now = new Date();
+  const nowIST = toIST(now);
   const slots: string[] = [];
 
   for (let day = 0; day < 10 && slots.length < limit; day += 1) {
     for (const hour of workingHours) {
-      const slot = new Date(now);
-      slot.setDate(now.getDate() + day);
-      slot.setHours(hour, 0, 0, 0);
+      // Build the slot as IST, then convert to UTC for storage
+      const slotIST = new Date(nowIST);
+      slotIST.setUTCDate(nowIST.getUTCDate() + day);
+      slotIST.setUTCHours(hour, 0, 0, 0);
+      const slot = fromIST(slotIST);
       if (slot <= now) continue;
       const iso = slot.toISOString();
       if (!booked.has(iso)) slots.push(iso);
@@ -84,8 +90,9 @@ export async function checkAvailability(candidate: SlotCandidate, store: AgentSt
   if (!doctor) return { ok: false, message: 'No matching doctor was found.' };
   const requested = candidate.startIso ? new Date(candidate.startIso) : undefined;
   if (requested && requested <= new Date()) return { ok: false, message: 'Requested time is in the past.', data: await nextSlots(candidate, store) };
-  if (requested && !workingHours.includes(requested.getHours())) {
-    return { ok: false, message: `Requested time is outside working hours. Available hours: ${workingHours.map(h => h >= 12 ? `${h === 12 ? 12 : h - 12}pm` : `${h}am`).join(', ')}.`, data: await nextSlots(candidate, store) };
+  const requestedISTHour = requested ? toIST(requested).getUTCHours() : undefined;
+  if (requested && !workingHours.includes(requestedISTHour!)) {
+    return { ok: false, message: `Requested time is outside working hours (IST). Available hours: ${workingHours.map(h => h >= 12 ? `${h === 12 ? 12 : h - 12}pm` : `${h}am`).join(', ')}.`, data: await nextSlots(candidate, store) };
   }
   const appointments = await store.listAppointments();
   const conflict = requested

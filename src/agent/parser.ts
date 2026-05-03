@@ -29,6 +29,8 @@ export function parseTurn(utterance: string, language: LanguageCode): ParsedTurn
   return { intent, doctorId: doctor?.id, specialty, startIso, accepted, rejected };
 }
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // UTC+5:30
+
 function parseRequestedTime(text: string): string | undefined {
   const now = new Date();
   const dayOffset = text.includes('tomorrow') || text.includes('kal') || text.includes('நாளை') ? 1 : 0;
@@ -39,8 +41,18 @@ function parseRequestedTime(text: string): string | undefined {
   const meridiem = hourMatch?.[3];
   if (meridiem === 'pm' && hour < 12) hour += 12;
   if (!meridiem && hour >= 1 && hour <= 4) hour += 12;
-  const requested = new Date(now);
-  requested.setDate(now.getDate() + dayOffset);
-  requested.setHours(hour, minute, 0, 0);
-  return requested.toISOString();
+
+  // Build the time in IST: treat the IST wall-clock as UTC offsets
+  const nowIST = new Date(now.getTime() + IST_OFFSET_MS);
+  const reqIST = new Date(nowIST);
+  reqIST.setUTCDate(nowIST.getUTCDate() + dayOffset);
+  reqIST.setUTCHours(hour, minute, 0, 0);
+  let reqUTC = new Date(reqIST.getTime() - IST_OFFSET_MS);
+
+  // Auto-advance: if no explicit day was given and the time is already past, assume tomorrow
+  if (dayOffset === 0 && reqUTC <= now) {
+    reqUTC = new Date(reqUTC.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  return reqUTC.toISOString();
 }
