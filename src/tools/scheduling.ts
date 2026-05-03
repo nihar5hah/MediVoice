@@ -8,7 +8,7 @@ export const doctors: Doctor[] = [
   { id: 'doc-iyer', name: 'Dr. Iyer', specialty: 'dermatology', languages: ['en', 'ta'] }
 ];
 
-const workingHours = [9, 10, 11, 14, 15, 16]; // hours in IST (Asia/Kolkata, UTC+5:30)
+const workingHours = [9, 10, 11, 14, 15, 16, 17, 18]; // hours in IST (Asia/Kolkata, UTC+5:30)
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const toIST  = (d: Date) => new Date(d.getTime() + IST_OFFSET_MS);
 const fromIST = (d: Date) => new Date(d.getTime() - IST_OFFSET_MS);
