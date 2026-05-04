@@ -306,12 +306,11 @@ export class VoiceAgent {
     return `${say(language, 'askDoctor')} We have: ${roster}.`;
   }
 
-  private askTimeReply(language: PatientMemory['languagePreference'], doctorName: string, slots: string[], reason?: string): string {
-    const formatted = slots.map(s => formatTime(s, language)).join(', ');
-    const prefix = reason ? (language === 'hi' ? `${reason} ` : language === 'ta' ? `${reason} ` : `${reason} `) : '';
-    if (language === 'hi') return `${prefix}${doctorName} ke liye available slots hain: ${formatted || 'abhi koi slot nahi'}. Kaunsa time chahiye?`;
-    if (language === 'ta') return `${prefix}${doctorName} available slots: ${formatted || 'ippo illai'}. Endha time venum?`;
-    return `${prefix}${doctorName}'s available slots are: ${formatted || 'none currently'}. Which time works for you?`;
+  private askTimeReply(language: PatientMemory['languagePreference'], doctorName: string, _slots: string[], reason?: string): string {
+    const prefix = reason ? `${reason} ` : '';
+    if (language === 'hi') return `${prefix}${doctorName} subah 9 baje se shaam 6 baje tak available hain. Aapko kaunsa time aur din chahiye?`;
+    if (language === 'ta') return `${prefix}${doctorName} kaalai 9 manikku irunthu maalai 6 manikku varai available irukkaar. Endha neram, endha naal venum?`;
+    return `${prefix}${doctorName} is available from 9 AM to 6 PM. What time and day works best for you?`;
   }
 
   private async advanceToNameOrConfirm(
